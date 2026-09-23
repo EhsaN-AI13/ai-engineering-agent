@@ -209,3 +209,16 @@ def test_agent_shared_between_requests():
     mock_agent.run.assert_any_call("حالت چطوره؟")
 
     app.dependency_overrides.clear()
+
+def test_health():
+    with TestClient(app):
+        response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {
+    "status": "healthy",
+    "agent": "EhSaN",
+    "model": "gpt-5.6-luna",
+    "environment": "development"
+    }
+     

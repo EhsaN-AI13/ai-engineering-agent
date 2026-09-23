@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 from pydantic import BaseModel, Field
 from contextlib import asynccontextmanager
+from config import settings
 
 from agent_factory import create_agent
 
@@ -33,6 +34,14 @@ class ChatRequest(BaseModel):
 def root():
     return {
         "message": "EhsaN AI Agent API is running."
+    }
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "agent": "EhSaN",
+        "model": settings.OPENAI_MODEL,
+        "environment": settings.ENVIRONMENT
     }
 
 class ChatResponse(BaseModel):
