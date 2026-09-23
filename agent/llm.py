@@ -1,7 +1,8 @@
 import json
-import os
 
-from dotenv import load_dotenv
+from config import settings
+
+
 from openai import OpenAI, RateLimitError
 
 from agent.tool_executor import ToolExecutor
@@ -9,7 +10,7 @@ from agent.memory import ConversationMemory
 from logger import logger
 
 
-load_dotenv()
+
 
 
 class OfflineResponses:
@@ -27,12 +28,12 @@ class OfflineClient:
 class LLM:
 
     def __init__(self, registry):
-        if os.getenv("OPENAI_API_KEY"):
+        if settings.OPENAI_API_KEY:
             self.client = OpenAI()
         else:
             self.client = OfflineClient()
 
-        self.model = "gpt-5.6-luna"
+        self.model = settings.OPENAI_MODEL
         self.registry = registry
         self.executor = ToolExecutor(registry)
         self.memory = ConversationMemory()
