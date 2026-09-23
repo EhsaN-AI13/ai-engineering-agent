@@ -255,11 +255,25 @@ def test_request_logging(caplog):
    
 
 def test_request_id_propagates_to_agent_logs(caplog):
-    with TestClient(app) as client:
-        response = client.post(
-            "/chat",
-            json={"message": "Hello"}
-        )
+    mock_response = Mock()
+    mock_response.output = []
+    mock_response.output_text = "Mock response"
+
+    mock_openai = Mock()
+    mock_openai.responses.create.return_value = mock_response
+
+    with patch(
+        "agent.llm.OpenAI",
+        return_value=mock_openai
+    ), patch(
+        "agent.llm.settings.OPENAI_API_KEY",
+        "test-key"
+    ):
+        with TestClient(app) as client:
+            response = client.post(
+                "/chat",
+                json={"message": "Hello"}
+            )
 
     assert response.status_code == 200
 
