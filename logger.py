@@ -1,16 +1,32 @@
 import logging
+from pathlib import Path
 
 
-logger = logging.getLogger("EhsaN")
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
 
+LOG_FILE = LOG_DIR / "ehsan.log"
+
+
+logger = logging.getLogger("EhSaN")
 logger.setLevel(logging.INFO)
 
-handler = logging.StreamHandler()
 
-formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(message)s"
-)
+if not logger.handlers:
 
-handler.setFormatter(formatter)
+    console_handler = logging.StreamHandler()
 
-logger.addHandler(handler)
+    file_handler = logging.FileHandler(
+        LOG_FILE,
+        encoding="utf-8"
+    )
+
+    formatter = logging.Formatter(
+        "%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+    console_handler.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
