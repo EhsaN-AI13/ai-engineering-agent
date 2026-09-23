@@ -1,4 +1,5 @@
 import json
+import os
 
 from dotenv import load_dotenv
 from openai import OpenAI, RateLimitError
@@ -8,14 +9,29 @@ from agent.memory import ConversationMemory
 from logger import logger
 
 
-
 load_dotenv()
+
+
+class OfflineResponses:
+    def create(self, **kwargs):
+        raise RuntimeError(
+            "OpenAI API client is not configured."
+        )
+
+
+class OfflineClient:
+    def __init__(self):
+        self.responses = OfflineResponses()
 
 
 class LLM:
 
     def __init__(self, registry):
-        self.client = OpenAI()
+        if os.getenv("OPENAI_API_KEY"):
+            self.client = OpenAI()
+        else:
+            self.client = OfflineClient()
+
         self.model = "gpt-5.6-luna"
         self.registry = registry
         self.executor = ToolExecutor(registry)
@@ -37,15 +53,19 @@ class LLM:
 
         tools = self._get_tools()
 
+        if isinstance(self.client, OfflineClient):
+            logger.error("OpenAI API key is not configured.")
+            return "OpenAI API key is not configured."
+
         try:
-          response = self.client.responses.create(
-            model=self.model,
-            input=self.memory.get_messages(),
-            tools=tools
-        )
+            response = self.client.responses.create(
+                model=self.model,
+                input=self.memory.get_messages(),
+                tools=tools
+            )
         except RateLimitError:
             logger.error("OpenAI API quota exceeded.")
-            return "OpenAI API quota has been exceeded."   
+            return "OpenAI API quota has been exceeded."
 
         while True:
 
@@ -55,7 +75,9 @@ class LLM:
 
                     arguments = json.loads(item.arguments)
 
-                    logger.info(f"LLM requested tool: {item.name}")
+                    logger.info(
+                        f"LLM requested tool: {item.name}"
+                    )
 
                     result = self._execute_tool(
                         item.name,
