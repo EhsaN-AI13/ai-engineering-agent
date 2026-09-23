@@ -932,3 +932,32 @@ def test_rate_limit_error():
     result = agent.run("سلام")
 
     assert result == "OpenAI API quota has been exceeded."
+
+def test_request_id_propagates_to_tool_executor(caplog):
+    from logger import request_id_context
+    from agent.tool_executor import ToolExecutor
+    from agent.tool_registry import ToolRegistry
+
+    registry = ToolRegistry()
+
+    token = request_id_context.set("test-request-123")
+
+    try:
+        executor = ToolExecutor(registry)
+
+        result = executor.execute(
+            "calculator",
+            2,
+            3,
+            operation="add"
+        )
+
+        assert result == 5
+
+        logs = caplog.text
+
+        assert "Executing tool: calculator" in logs
+        assert "Tool result: 5" in logs
+
+    finally:
+        request_id_context.reset(token)

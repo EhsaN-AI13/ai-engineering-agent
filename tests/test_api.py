@@ -222,3 +222,71 @@ def test_health():
     "environment": "development"
     }
      
+def test_request_id_header():
+    with TestClient(app):
+        response = client.get("/")
+
+    assert response.status_code == 200
+    assert "X-Request-ID" in response.headers
+    assert response.headers["X-Request-ID"]
+
+def test_request_id_is_unique():
+    with TestClient(app):
+        response_1 = client.get("/")
+        response_2 = client.get("/")
+
+    request_id_1 = response_1.headers["X-Request-ID"]
+    request_id_2 = response_2.headers["X-Request-ID"]
+
+    assert request_id_1 != request_id_2
+
+def test_request_logging(caplog):
+    with TestClient(app):
+        response = client.get("/health")
+
+    assert response.status_code == 200
+
+    logs = caplog.text
+
+    assert "Request started" in logs
+    assert "Request finished" in logs
+    assert "request_id=" in logs
+    assert "duration=" in logs
+   
+
+def test_request_id_propagates_to_agent_logs(caplog):
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            json={"message": "Hello"}
+        )
+
+    assert response.status_code == 200
+
+    logs = caplog.text
+
+    start_line = next(
+        line for line in logs.splitlines()
+        if "Request started" in line
+    )
+
+    request_id = start_line.split("request_id=")[1].split()[0]
+
+    assert request_id != "-"
+
+    assert "Agent started." in logs
+    assert "LLM request started." in logs
+
+    assert f"request_id={request_id}" in start_line
+
+def test_request_id_does_not_leak_between_requests(caplog):
+    with TestClient(app) as client:
+        response_1 = client.get("/")
+        response_2 = client.get("/")
+
+    request_id_1 = response_1.headers["X-Request-ID"]
+    request_id_2 = response_2.headers["X-Request-ID"]
+
+    assert request_id_1 != request_id_2
+    assert request_id_1 != "-"
+    assert request_id_2 != "-"
