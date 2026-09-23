@@ -1,12 +1,11 @@
 from unittest.mock import Mock, patch
-from api import get_agent
 
 from fastapi.testclient import TestClient
 
 from api import app, get_agent
 
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 
 def test_root():
@@ -76,26 +75,27 @@ def test_chat_dependency_injection():
     app.dependency_overrides.clear()
 
 def test_chat_empty_message():
-    response = client.post(
-        "/chat",
-        json={
-            "message": ""
-        }
-    )
+    with TestClient(app):
+        response = client.post(
+            "/chat",
+            json={
+                "message": ""
+            }
+        )
 
     assert response.status_code == 422
 
 
 def test_chat_invalid_message_type():
-    response = client.post(
-        "/chat",
-        json={
-            "message": 123
-        }
-    )
+    with TestClient(app):
+        response = client.post(
+            "/chat",
+            json={
+                "message": 123
+            }
+        )
 
     assert response.status_code == 422
-
 def test_chat_agent_error():
     mock_agent = Mock()
 

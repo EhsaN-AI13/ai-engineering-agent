@@ -22,7 +22,7 @@ def get_agent():
     return app.state.agent
 
 
-app.state.agent = create_agent()
+
 
 
 class ChatRequest(BaseModel):
