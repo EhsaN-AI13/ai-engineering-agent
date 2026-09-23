@@ -53,9 +53,7 @@ class LLM:
 
         tools = self._get_tools()
 
-        if isinstance(self.client, OfflineClient):
-            logger.error("OpenAI API key is not configured.")
-            return "OpenAI API key is not configured."
+        
 
         try:
             response = self.client.responses.create(
